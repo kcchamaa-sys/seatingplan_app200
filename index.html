@@ -137,10 +137,36 @@ td.r{text-align:center;font-weight:500}
 #printSheet{display:none}
 @media (max-width:560px){.ask{padding:18px}.seg button{padding:9px 11px}}
 @media print{@page{size:A4 landscape;margin:0}body{background:#fff}#root,.tone{display:none!important}#printSheet{display:block}#printSheet img{display:block;width:100%;height:auto}}
+
+.lock[hidden]{display:none}
+.lock{position:fixed;inset:0;z-index:9999;background:var(--page);display:flex;align-items:center;justify-content:center;padding:20px}
+.lock form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px;max-width:340px;width:100%;text-align:center}
+.lock h2{font-size:22px;margin-bottom:6px}.lock p{color:var(--soft);margin-bottom:16px;font-size:15px}
+.lock input{width:100%;font-size:24px;letter-spacing:.4em;text-align:center;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+.lock button{width:100%;min-height:46px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-weight:700}
+.lock button:hover{background:var(--accent-hover)}
+.lock .err{color:var(--bad);min-height:24px;margin:0 0 8px;font-size:14.5px}
 </style>
 </head>
 <body>
 <div id="root"></div>
+<div id="lock" class="lock" hidden><form id="lockForm" autocomplete="off"><h2>3B 座位表 Seating Plan</h2><p>請輸入密碼 · Enter passcode</p><input id="lockPin" type="password" inputmode="numeric" autocomplete="off" aria-label="Passcode" autofocus><div class="err" id="lockErr" role="alert"></div><button type="submit">解鎖 Unlock</button></form></div>
+<script>
+(function(){
+const HASH="5f7f84beae96af8f447bd8337dbf3ad9fe983b15573c937d13ef580b5eacbd35",SALT="3b-seating-2026",K="seating-3b-unlocked";
+const lock=document.getElementById("lock"),root=document.getElementById("root");
+async function h(x){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(SALT+":"+x));return[...new Uint8Array(b)].map(v=>v.toString(16).padStart(2,"0")).join("")}
+let ok=false;try{ok=sessionStorage.getItem(K)===HASH}catch(e){}
+if(ok)return;
+window.__locked=true;lock.hidden=false;root.hidden=true;
+document.getElementById("lockForm").addEventListener("submit",async e=>{
+  e.preventDefault();const v=document.getElementById("lockPin").value;
+  if(crypto.subtle&&await h(v)===HASH){try{sessionStorage.setItem(K,HASH)}catch(x){}location.reload()}
+  else{document.getElementById("lockErr").textContent="密碼不正確 · Incorrect passcode";document.getElementById("lockPin").value="";document.getElementById("lockPin").focus()}
+});
+})();
+</script>
+
 <div id="printSheet"></div>
 <script>
 "use strict";
@@ -619,7 +645,7 @@ document.addEventListener("change",async e=>{
   }
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sel){S.sel=null;render()}});
-render();connect();
+if(!window.__locked){render();connect();}
 </script>
 </body>
 </html>
