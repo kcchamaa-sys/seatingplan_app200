@@ -91,7 +91,10 @@ select,input[type=date]{background:var(--surface);border:1px solid var(--line);b
 .acts{display:flex;flex-wrap:wrap;gap:8px}
 .room{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;overflow-x:auto}
 .roomin{min-width:max-content}
-.board{background:var(--board);color:var(--board-ink);text-align:center;font-weight:700;padding:8px;border-radius:9px}
+.boardrow{display:flex;gap:10px;align-items:stretch}
+.board{flex:1 1 0;background:var(--board);color:var(--board-ink);text-align:center;font-weight:700;padding:8px;border-radius:9px}
+.desk{flex:none;width:124px;background:var(--tint);color:var(--soft);border:1px solid var(--line);text-align:center;font-weight:500;font-size:14px;padding:8px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+@media (max-width:560px){.desk{width:92px;font-size:13px}}
 .rowline{display:flex;gap:16px;margin-top:10px}
 .rowlabel{width:16px;align-self:center;font-size:13px;color:var(--soft);text-align:center;flex:none}
 .bench{display:flex;gap:2px;flex:1 1 0}
@@ -179,7 +182,7 @@ const LOCAL_KEY="seating-3b-v1";
 const I18N={
  zh:{title:"3B 座位表",tabPlan:"座位表",tabRecord:"紀錄",other:"English",restart:"重新開始",restartYes:"確定重新開始",restartWarn:"這份座位表未儲存，重新開始後會消失。",tRestart:"已回到第一步，已儲存的座位表仍然保留。",clearAll:"清除全部紀錄",clearYes:n=>`確定刪除全部 ${n} 份座位表`,clearNote:"適合新學年開始時使用，刪除後無法復原。",tCleared:"全部紀錄已清除。",
   stepOf:(a,b)=>`第 ${a} 步，共 ${b} 步`,
-  q1:"選擇課室排位",q1d:n=>`每個方案都剛好安排 ${n} 位學生。`,board:"黑板",
+  q1:"選擇課室排位",q1d:n=>`每個方案都剛好安排 ${n} 位學生。`,board:"黑板",desk:"講桌",
   presets:{pairs:["兩人同桌","每排 3 組，適合日常上課和討論"],single:["單人座位","每排 6 人，適合需要專注的課堂"],wide:["單人闊排","每排 7 人，適合較闊的課室"],threes:["三人一組","每排 2 組，適合小組活動"]},
   q2:"有特別安排嗎？",q2d:"沒有的話，按「下一步」就可以。",chooseS:"選擇學生",add:"加入",remove:"移除",
   rFront:"坐前排",rBack:"坐後排",rApart:"不要坐近",rTogether:"要同桌",
@@ -208,7 +211,7 @@ const I18N={
  },
  en:{title:"3B seating plan",tabPlan:"Seating plan",tabRecord:"Record",other:"繁體中文",restart:"Start over",restartYes:"Yes, start over",restartWarn:"This plan isn’t saved. Starting over will remove it.",tRestart:"Back to step 1. Your saved plans are still here.",clearAll:"Clear all records",clearYes:n=>`Yes, delete all ${n} plans`,clearNote:"For a new school year. This can’t be undone.",tCleared:"All records cleared.",
   stepOf:(a,b)=>`Step ${a} of ${b}`,
-  q1:"Choose a classroom layout",q1d:n=>`Every layout fits exactly ${n} students.`,board:"Blackboard",
+  q1:"Choose a classroom layout",q1d:n=>`Every layout fits exactly ${n} students.`,board:"Blackboard",desk:"Teacher’s desk",
   presets:{pairs:["Pairs","3 pairs per row, good for everyday lessons and discussion"],single:["Single desks","6 per row, good for focused lessons"],wide:["Wide single rows","7 per row, good for wider rooms"],threes:["Groups of three","2 groups per row, good for group work"]},
   q2:"Any special arrangements?",q2d:"If not, just tap Next.",chooseS:"Choose student",add:"Add",remove:"Remove",
   rFront:"sits at the front",rBack:"sits at the back",rApart:"stays apart from",rTogether:"shares a desk with",
@@ -240,7 +243,8 @@ const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth
 const PRESETS=[{id:"pairs",cols:6,group:2},{id:"single",cols:6,group:1},{id:"wide",cols:7,group:1},{id:"threes",cols:6,group:3}];
 function applyPreset(s){const p=PRESETS.find(x=>x.id===s.preset)||PRESETS[0];s.preset=p.id;s.cols=p.cols;s.group=p.group;s.rows=Math.ceil(STUDENTS.length/p.cols);s.blocked=[]}
 const unusedSeats=s=>usableSeats(s).slice(STUDENTS.length).map(x=>key(x.r,x.c));
-const defaults=()=>({preset:"pairs",rows:6,cols:6,group:2,blocked:[],front:[],back:[],apart:[],together:[],focus:"balanced",mixHouses:true,boardTop:true,lang:"zh"});
+const defaults=()=>({preset:"pairs",rows:6,cols:6,group:2,blocked:[],front:[],back:[],apart:[],together:[],focus:"balanced",mixHouses:true,boardTop:false,layout:2,lang:"zh"});
+const norm=o=>o.layout===2?o:{...o,boardTop:false,layout:2};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const label=no=>no+" "+BY_NO[no].zh;
 const key=(r,c)=>r+"-"+c;
@@ -381,9 +385,11 @@ function drawSheet(p,boardTop){
   const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);
   x.fillStyle="#2F3C48";x.font="700 64px "+FONT;x.textAlign="left";x.fillText(t.pdfTitle,m,m+50);
   x.font="400 38px "+FONT;x.fillStyle="#5F6E7B";x.textAlign="right";x.fillText((p.name||"")+(p.date?"   "+niceDate(p.date):""),W-m,m+50);
-  const top=m+96,bottom=H-m-54,boardH=78,g=p.group||1,barY=boardTop?top:bottom-boardH;
-  x.fillStyle="#D9EBE1";rr(x,m,barY,W-2*m,boardH,16);x.fill();
-  x.fillStyle="#2C5A45";x.font="700 38px "+FONT;x.textAlign="center";x.fillText(t.board,W/2,barY+52);
+  const top=m+96,bottom=H-m-54,boardH=78,g=p.group||1,barY=boardTop?top:bottom-boardH,deskW=300,dg=24,bx=boardTop?m+deskW+dg:m,bw=W-2*m-deskW-dg,dx=boardTop?m:W-m-deskW;
+  x.fillStyle="#D9EBE1";rr(x,bx,barY,bw,boardH,16);x.fill();
+  x.fillStyle="#2C5A45";x.font="700 38px "+FONT;x.textAlign="center";x.fillText(t.board,bx+bw/2,barY+52);
+  x.fillStyle="#EAF2F8";rr(x,dx,barY,deskW,boardH,16);x.fill();x.strokeStyle="#DFE6EC";x.lineWidth=2;rr(x,dx,barY,deskW,boardH,16);x.stroke();
+  x.fillStyle="#5F6E7B";x.font="500 34px "+FONT;x.fillText(t.desk,dx+deskW/2,barY+51);
   const gy=boardTop?top+boardH+30:top,gh=(boardTop?bottom:bottom-boardH-30)-gy;
   const aisles=g>1?Math.ceil(p.cols/g)-1:0,aisle=g>1?48:0,gapC=g>1?5:14,gapR=22,gutter=52;
   const cw=(W-2*m-gutter-aisles*aisle-(p.cols-1)*gapC)/p.cols,ch=(gh-(p.rows-1)*gapR)/p.rows;
@@ -449,7 +455,7 @@ async function removePlan(id){
   else{S.plans=S.plans.filter(x=>x.id!==id);localWrite()}
 }
 function failNote(e){const t=T();toast(e&&e.code==="invalid_argument"?t.ePerm:e&&e.code==="quota_exceeded"?t.eFull:t.eSave)}
-function loadLocal(){const l=localRead();S.plans=l.plans||[];if(l.settings&&!S.touched)S.s={...defaults(),...l.settings};store.mode="local";S.loading=false;render()}
+function loadLocal(){const l=localRead();S.plans=l.plans||[];if(l.settings&&!S.touched)S.s=norm({...defaults(),...l.settings});store.mode="local";S.loading=false;render()}
 async function connect(){
   if(!(window.claude&&window.claude.use)){loadLocal();return}
   store.viewer=true;
@@ -461,7 +467,7 @@ async function connect(){
   const timer=setTimeout(()=>{if(S.loading){S.loading=false;S.slow=true;render()}},10000);
   const done=()=>{if(gotPlans&&gotSettings&&S.loading){clearTimeout(timer);S.loading=false;S.slow=false}render()};
   db.collection("plans").limit(500).onSnapshot(q=>{S.plans=q.docs.map(d=>({...d.data(),id:d.id}));if(!q.metadata.fromCache){gotPlans=true;S.slow=false}done()},e=>{clearTimeout(timer);S.loading=false;S.slow=true;render()});
-  db.doc("settings/main").onSnapshot(d=>{if(d.exists&&!S.touched)S.s={...defaults(),...d.data()};if(!d.metadata.fromCache)gotSettings=true;done()},e=>{gotSettings=true;done()});
+  db.doc("settings/main").onSnapshot(d=>{if(d.exists&&!S.touched)S.s=norm({...defaults(),...d.data()});if(!d.metadata.fromCache)gotSettings=true;done()},e=>{gotSettings=true;done()});
 }
 function saveFile(name,blob){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
 
@@ -510,7 +516,7 @@ function viewRoom(p){
   const benches=[];let cur=[];cs.forEach(c=>{if(cur.length&&Math.floor(cur[0]/g)!==Math.floor(c/g)){benches.push(cur);cur=[]}cur.push(c)});benches.push(cur);
   let i=0;
   const rows=rs.map(r=>`<div class="rowline"><span class="rowlabel">${r+1}</span>${(g>1?benches:cs.map(c=>[c])).map(b=>`<div class="bench">${b.map(c=>seatHtml(p,r,c,i++)).join("")}</div>`).join("")}</div>`).join("");
-  const board=`<div class="board">${t.board}</div>`;
+  const desk=`<div class="desk">${t.desk}</div>`,board=`<div class="boardrow">${top?desk:""}<div class="board">${t.board}</div>${top?"":desk}</div>`;
   return`<div class="room"><div class="roomin">${top?board:""}${rows}${top?"":`<div style="height:10px"></div>${board}`}</div></div>`;
 }
 function viewPlan(){
@@ -641,7 +647,7 @@ document.addEventListener("change",async e=>{
   else if(i==="rT"){S.rT=t.value;render()}
   else if(i==="date")S.date=t.value;
   else if(i==="restore"&&t.files[0]){
-    try{const d=JSON.parse(await t.files[0].text());if(d.app!=="seating-3b"||!Array.isArray(d.plans))throw 0;S.plans=d.plans;S.s={...defaults(),...d.settings};touch();localWrite();render();toast(T().tRestored)}catch(x){toast(T().eRestore)}
+    try{const d=JSON.parse(await t.files[0].text());if(d.app!=="seating-3b"||!Array.isArray(d.plans))throw 0;S.plans=d.plans;S.s=norm({...defaults(),...d.settings});touch();localWrite();render();toast(T().tRestored)}catch(x){toast(T().eRestore)}
   }
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sel){S.sel=null;render()}});
