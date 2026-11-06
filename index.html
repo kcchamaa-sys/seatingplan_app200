@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3B 座位表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --page:#F6F9FB;--surface:#FFFFFF;--tint:#EAF2F8;--ink:#2F3C48;--soft:#5F6E7B;--line:#DFE6EC;
+  --accent:#2F75B0;--accent-hover:#26659A;--accent-tint:#E4EFF8;--board:#D9EBE1;--board-ink:#2C5A45;--sel:#F7C948;--bad:#A8473F;--badbg:#FBEDEA;
+  --R:#FBE3DF;--Y:#FBF0C9;--V:#EBE2F6;--G:#DDF0DF;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--page);color:var(--ink);font:400 16px/1.6 var(--font)}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+.top{max-width:1040px;margin:auto;padding:12px 20px;display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center}
+h1{font-size:20px;font-weight:700;margin-right:auto}
+nav{display:flex;gap:4px}
+nav button,.lang{background:none;border:0;padding:8px 14px;border-radius:9px;color:var(--soft);font-weight:500;min-height:40px}
+nav button:hover,.lang:hover{background:var(--tint)}
+nav button[aria-current="page"]{background:var(--accent-tint);color:var(--accent);font-weight:700}
+main{max-width:1040px;margin:auto;padding:30px 20px 64px}
+.sync{font-size:14.5px;color:var(--soft);margin-bottom:16px}
+
+.ask{max-width:620px;margin:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px}
+.count{font-size:14.5px;color:var(--soft);margin-bottom:4px}
+h2{font-size:clamp(23px,4vw,27px);line-height:1.3;font-weight:700}
+.lede{color:var(--soft);margin:4px 0 20px}
+.field{margin-bottom:20px}
+.lab{display:block;font-weight:500;margin-bottom:6px}
+.controls{display:flex;flex-wrap:wrap;gap:16px 28px}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.step button{border:0;background:none;width:44px;height:44px;font-size:20px;color:var(--accent)}
+.step button:hover{background:var(--tint)}
+.step output{min-width:36px;text-align:center;font-weight:700;font-size:18px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:none;padding:9px 14px;min-height:44px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent-tint);color:var(--accent);font-weight:700}
+.mini{background:var(--page);border-radius:12px;padding:14px;overflow-x:auto}
+.mini .boardline{background:var(--board);color:var(--board-ink);text-align:center;font-size:13px;border-radius:6px;padding:3px;margin-bottom:12px}
+.minigrid{display:grid;gap:6px;min-width:max-content;justify-content:center}
+.minigrid button{width:34px;height:26px;border:1px solid #BFD6E8;background:var(--accent-tint);border-radius:5px;padding:0;color:var(--soft);line-height:1}
+.minigrid button.off{background:none;border:1px dashed var(--line)}
+.minigrid button.spare{background:var(--surface)}
+.presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.preset{display:flex;gap:14px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px}
+.preset:hover{background:var(--page)}
+.preset[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-tint)}
+.preset b{display:block;font-weight:700}
+.preset small{display:block;color:var(--soft);font-size:14px;line-height:1.4}
+.thumb{display:grid;gap:2px;flex:none;align-content:start;justify-content:center;width:82px}
+.thumb i{display:block;width:9px;height:7px;background:#A9CBE4;border-radius:1.5px}
+.thumb i.none{background:none}
+.note{font-size:14.5px;color:var(--soft);margin-top:8px}
+.note.err{color:var(--bad);font-weight:500}
+.reqform{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.reqform select{flex:1 1 150px}
+select,input[type=date]{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:8px 10px;max-width:100%}
+.reqs{list-style:none;padding:0;margin:14px 0 0}
+.reqs li{display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--page);border-radius:10px;padding:5px 6px 5px 12px;margin-bottom:6px;font-size:15px}
+.choice{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);padding:11px 13px;border-radius:11px;margin-bottom:7px;cursor:pointer}
+.choice:has(input:checked){border-color:var(--accent);background:var(--accent-tint)}
+.choice input{margin-top:5px;accent-color:var(--accent);width:17px;height:17px;flex:none}
+.choice small{display:block;color:var(--soft);font-size:14px}
+.foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:8px}
+.foot .right{margin-left:auto;display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:var(--surface);min-height:44px;padding:8px 18px;border-radius:10px;font-weight:500}
+.btn:hover{background:var(--tint)}
+.btn.main{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.btn.main:hover{background:var(--accent-hover)}
+.btn.text{border-color:transparent;background:none;color:var(--accent);padding:8px 10px}
+.btn.text:hover{background:var(--tint)}
+.btn.danger{color:var(--bad)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.small{min-height:38px;padding:4px 12px;font-size:15px}
+
+.planhead{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center;justify-content:space-between;margin-bottom:16px}
+.planhead p{color:var(--soft);font-size:15px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.room{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;overflow-x:auto}
+.roomin{min-width:max-content}
+.board{background:var(--board);color:var(--board-ink);text-align:center;font-weight:700;padding:8px;border-radius:9px}
+.rowline{display:flex;gap:16px;margin-top:10px}
+.rowlabel{width:16px;align-self:center;font-size:13px;color:var(--soft);text-align:center;flex:none}
+.bench{display:flex;gap:2px;flex:1 1 0}
+.seat{flex:1 1 0;min-width:104px;min-height:82px;background:var(--hc,var(--surface));border:0;padding:7px 9px;text-align:left;display:block;border-radius:10px;color:var(--ink)}
+.bench .seat:not(:last-child){border-top-right-radius:3px;border-bottom-right-radius:3px}
+.bench .seat:not(:first-child){border-top-left-radius:3px;border-bottom-left-radius:3px}
+.seat .zh{display:block;font-size:18px;font-weight:700;line-height:1.3}
+.seat .no{font-size:13px;color:var(--soft);font-weight:500;margin-right:5px}
+.seat .en{display:block;font-size:11.5px;line-height:1.25;color:#4C5966;overflow-wrap:anywhere;margin-top:2px}
+.seat:hover{filter:brightness(.97)}
+.seat.sel{outline:3px solid var(--sel);outline-offset:-3px}
+.seat.empty{background:var(--page);color:var(--soft);font-size:13px;text-align:center;border:1px dashed var(--line)}
+.seat.gone{visibility:hidden}
+.seat.flash{animation:land .3s ease-out both;animation-delay:calc(var(--i)*8ms)}
+@keyframes land{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.seat.flash{animation:none}}
+.under{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin-top:12px;font-size:15px;color:var(--soft)}
+.under .keys{display:flex;gap:12px;margin-left:auto;font-size:14px}
+.keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.summary{margin-top:10px;font-size:15.5px}
+.prob{color:var(--bad);background:var(--badbg);padding:7px 12px;border-radius:9px;margin-top:6px;font-size:15px}
+.links{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;margin-left:-10px}
+
+.head2{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px}
+.savedlist{list-style:none;padding:0;margin:0 0 30px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.savedlist li{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 14px}
+.savedlist li+li{border-top:1px solid var(--line)}
+.savedlist .grow{flex:1 1 200px}
+.savedlist .grow span{font-size:14.5px;color:var(--soft);margin-left:8px}
+.savedlist .btns{display:flex;gap:4px;flex-wrap:wrap}
+.blank{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;margin-bottom:24px}
+.blank p{margin-bottom:12px}
+h3{font-size:19px;font-weight:700;margin-bottom:10px}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-weight:500;background:var(--page);vertical-align:bottom;color:var(--soft)}
+th.pl{white-space:normal;font-size:13px;line-height:1.3;min-width:72px}
+td.mates{white-space:normal;min-width:240px;font-size:14.5px;color:var(--soft)}
+td.r{text-align:center;font-weight:500}
+.backup{margin-top:24px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:15px;color:var(--soft)}
+.tone{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;max-width:90vw;z-index:20}
+#printSheet{display:none}
+@media (max-width:560px){.ask{padding:18px}.seg button{padding:9px 11px}}
+@media print{@page{size:A4 landscape;margin:0}body{background:#fff}#root,.tone{display:none!important}#printSheet{display:block}#printSheet img{display:block;width:100%;height:auto}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="printSheet"></div>
+<script>
+"use strict";
+const CLASS_NAME="3B", YEAR="2026–27";
+const STUDENTS=[[1,"辛悅","ABIGAIL KAUR","R"],[2,"白可如","BAGUIO SASHA LEAH","Y"],[3,"何凱寧","CHAIKAM HO HOI LING","V"],[4,"陳美霞","CHAN MISHA","V"],[5,"陳穎渝","CHAN WING YU","V"],[6,"鄭鱈珊","CHENG SUET SHAN","V"],[7,"張雅彤","CHEUNG NGA TUNG","R"],[8,"賈燦","JIA CAN","R"],[9,"康彥陶","KANG KIKI","V"],[10,"林曉瑜","LAM HIU YU HAYLIE","Y"],[11,"林凱彤","LAM HOI TUNG ALEXIS SOPHIA","Y"],[12,"劉沇妍","LAU WAN YIN","G"],[13,"羅懿","LAW ZITA YI","R"],[14,"梁穎琳","LEONG WING LAM","G"],[15,"李霈盈","LI PUI YING","Y"],[16,"李欣煣","LI YAN YAU","Y"],[17,"駱曉瑜","LOK HIU YU","R"],[18,"雷紫寧","LUI TSZ NING KAELYN","Y"],[19,"吳芷臻","NG HAZEL MIA","V"],[20,"顏子蓁","NGAN AUDREY KYLIE","G"],[21,"黃穎心","OAY WING SUM","Y"],[22,"蕭曉璇","SEOW HIU SHUEN","G"],[23,"蘇卓慈","SO CHEUK CHI","G"],[24,"蘇雋雅","SO CHUN NGA","G"],[25,"謝芷晴","TSE TSZ CHING","R"],[26,"蔡雅妍","TSOI NGA YIN","Y"],[27,"黃希怡","WONG HEI YI HAILEY","R"],[28,"黃晞瑤","WONG HEI YIU","Y"],[29,"黃海晴","WONG HOI CHING JOAN","V"],[30,"黃舒悠","WONG SHU YAU","R"],[31,"黃思雅","WONG SZE NGAR","Y"],[32,"胡采而","WOODHEAD RHEA CHOI YEE","V"],[33,"胡芯妍","WU SUM YIN JANY CLAUDY","V"]].map(([no,zh,en,house])=>({no,zh,en,house}));
+
+const BY_NO=Object.fromEntries(STUDENTS.map(s=>[s.no,s]));
+const HOUSE_HEX={R:"#FBE3DF",Y:"#FBF0C9",V:"#EBE2F6",G:"#DDF0DF"};
+const LOCAL_KEY="seating-3b-v1";
+const I18N={
+ zh:{title:"3B 座位表",tabPlan:"座位表",tabRecord:"紀錄",other:"English",restart:"重新開始",restartYes:"確定重新開始",restartWarn:"這份座位表未儲存，重新開始後會消失。",tRestart:"已回到第一步，已儲存的座位表仍然保留。",clearAll:"清除全部紀錄",clearYes:n=>`確定刪除全部 ${n} 份座位表`,clearNote:"適合新學年開始時使用，刪除後無法復原。",tCleared:"全部紀錄已清除。",
+  stepOf:(a,b)=>`第 ${a} 步，共 ${b} 步`,
+  q1:"選擇課室排位",q1d:n=>`每個方案都剛好安排 ${n} 位學生。`,board:"黑板",
+  presets:{pairs:["兩人同桌","每排 3 組，適合日常上課和討論"],single:["單人座位","每排 6 人，適合需要專注的課堂"],wide:["單人闊排","每排 7 人，適合較闊的課室"],threes:["三人一組","每排 2 組，適合小組活動"]},
+  q2:"有特別安排嗎？",q2d:"沒有的話，按「下一步」就可以。",chooseS:"選擇學生",add:"加入",remove:"移除",
+  rFront:"坐前排",rBack:"坐後排",rApart:"不要坐近",rTogether:"要同桌",
+  lFront:n=>`${n} 坐前排`,lBack:n=>`${n} 坐後排`,lApart:(a,b)=>`${a} 和 ${b} 不要坐近`,lTogether:(a,b)=>`${a} 和 ${b} 要同桌`,
+  needTwo:"請選擇兩位不同的學生。",needOne:"請先選擇學生。",dup:"這項安排已在清單上。",
+  q3:"這次最重要的是？",q3hist:c=>`會參考已儲存的 ${c} 份座位表。`,q3first:"這是第一份座位表，暫時未有紀錄可參考。",
+  fBal:"兩者兼顧",fBalD:"前後輪換，同時換新同桌。",fNei:"換新同桌優先",fNeiD:"適合分開經常聊天的同學。",fRot:"前後輪換優先",fRotD:"讓後排同學輪到前排。",
+  mix:"盡量分開同社同學",date:"開始日期",
+  back:"上一步",next:"下一步",skip:"略過，直接生成",gen:"生成座位表",loading:"正在載入…",
+  planN:n=>`座位表 ${n}`,unsaved:"未儲存",changed:"有未儲存的更改",saved:"已儲存",
+  save:"儲存",pdf:"下載 PDF",making:"製作中…",another:"換一個方案",change:"修改設定",flip:"轉換方向",delPlan:"",
+  swapHint:"調位：先點一位學生，再點另一位。",swapNow:"現在點要交換的位置。",empty:"空位",
+  firstSum:"第一份座位表。儲存後，下次會以此為基礎。",
+  sum:(m,b,n,t)=>`${b} 位後排學生中有 ${m} 位向前移；${t} 位中有 ${n} 位坐到新同桌。`,
+  repeats:l=>`再次同桌：${l}`,
+  pFront:(n,s)=>`${n} 不在前 ${s} 排`,pBack:(n,s)=>`${n} 不在後 ${s} 排`,pApart:(a,b)=>`${a} 和 ${b} 坐得太近`,pTogether:(a,b)=>`${a} 和 ${b} 不是同桌`,
+  savedTitle:"已儲存的座位表",recordCurrent:"記錄現有座位",open:"開啟",del:"刪除",delYes:"確定刪除",delNo:"取消",
+  noPlans:"未有已儲存的座位表。如 3B 已有座位，建議先記錄，新座位表便會由現況開始輪換。",newPlan:"生成新座位表",
+  studentRec:"學生紀錄",studentNote:"數字是排數，1 最接近黑板。",student:"學生",mates:"曾經同桌",none:"未有",
+  current:"現有座位",recHint:"調位至與課室相同，然後儲存。",
+  tSaved:"已儲存，下次會參考這份座位表。",tChanged:"更改已儲存。",tDeleted:"已刪除。",tPdf:"PDF 已下載。",
+  ePerm:"你只可檢視，沒有儲存權限。",eFull:"儲存空間已滿，請先刪除舊座位表。",eSave:"儲存失敗，請檢查網絡後再試。",ePdf:"未能下載 PDF，請再試一次。",
+  slow:"暫時未能連接紀錄，顯示的內容可能不是最新。",local:"紀錄只儲存在這部裝置的瀏覽器。",
+  backupT:"備份：",backupDown:"下載備份",backupUp:"還原備份",tRestored:"備份已還原。",eRestore:"這個檔案不是有效的備份。",
+  pdfTitle:"3B 座位表",pdfNote:"第 1 排最接近黑板",rowWord:"排",year:`${YEAR} 年度`,
+ },
+ en:{title:"3B seating plan",tabPlan:"Seating plan",tabRecord:"Record",other:"繁體中文",restart:"Start over",restartYes:"Yes, start over",restartWarn:"This plan isn’t saved. Starting over will remove it.",tRestart:"Back to step 1. Your saved plans are still here.",clearAll:"Clear all records",clearYes:n=>`Yes, delete all ${n} plans`,clearNote:"For a new school year. This can’t be undone.",tCleared:"All records cleared.",
+  stepOf:(a,b)=>`Step ${a} of ${b}`,
+  q1:"Choose a classroom layout",q1d:n=>`Every layout fits exactly ${n} students.`,board:"Blackboard",
+  presets:{pairs:["Pairs","3 pairs per row, good for everyday lessons and discussion"],single:["Single desks","6 per row, good for focused lessons"],wide:["Wide single rows","7 per row, good for wider rooms"],threes:["Groups of three","2 groups per row, good for group work"]},
+  q2:"Any special arrangements?",q2d:"If not, just tap Next.",chooseS:"Choose student",add:"Add",remove:"Remove",
+  rFront:"sits at the front",rBack:"sits at the back",rApart:"stays apart from",rTogether:"shares a desk with",
+  lFront:n=>`${n} sits at the front`,lBack:n=>`${n} sits at the back`,lApart:(a,b)=>`${a} and ${b} stay apart`,lTogether:(a,b)=>`${a} and ${b} share a desk`,
+  needTwo:"Choose two different students.",needOne:"Choose a student first.",dup:"That’s already on the list.",
+  q3:"What matters most this time?",q3hist:c=>`Uses ${c} saved plan${c>1?"s":""}.`,q3first:"This is the first plan, so there’s no history yet.",
+  fBal:"A bit of both",fBalD:"Move students front and back, with new desk partners.",fNei:"New desk partners first",fNeiD:"Good for separating chatty groups.",fRot:"Front and back turns first",fRotD:"Gives back-row students a turn at the front.",
+  mix:"Keep students of the same house apart",date:"Start date",
+  back:"Back",next:"Next",skip:"Skip and generate",gen:"Generate plan",loading:"Loading…",
+  planN:n=>`Plan ${n}`,unsaved:"Not saved",changed:"Unsaved changes",saved:"Saved",
+  save:"Save",pdf:"Download PDF",making:"Making PDF…",another:"Try another",change:"Change settings",flip:"Turn around",
+  swapHint:"To swap, tap one student, then another.",swapNow:"Now tap the seat to swap with.",empty:"Empty",
+  firstSum:"First plan. Once saved, the next plan will build on it.",
+  sum:(m,b,n,t)=>`${m} of ${b} back-half students move forward. ${n} of ${t} get a new desk partner.`,
+  repeats:l=>`Repeat desk partners: ${l}`,
+  pFront:(n,s)=>`${n} is outside the front ${s} rows`,pBack:(n,s)=>`${n} is outside the back ${s} rows`,pApart:(a,b)=>`${a} and ${b} are too close`,pTogether:(a,b)=>`${a} and ${b} aren’t at the same desk`,
+  savedTitle:"Saved plans",recordCurrent:"Record current seating",open:"Open",del:"Delete",delYes:"Yes, delete",delNo:"Cancel",
+  noPlans:"No saved plans yet. If 3B already has seats, record them first so the next plan moves on from there.",newPlan:"Make a new plan",
+  studentRec:"Student record",studentNote:"Numbers are rows. Row 1 is nearest the board.",student:"Student",mates:"Desk partners so far",none:"None yet",
+  current:"Current seating",recHint:"Swap until it matches your classroom, then save.",
+  tSaved:"Saved. The next plan will use it.",tChanged:"Changes saved.",tDeleted:"Deleted.",tPdf:"PDF downloaded.",
+  ePerm:"You can view this page but can’t save.",eFull:"Storage is full. Delete an old plan first.",eSave:"Saving failed. Check your connection and try again.",ePdf:"The PDF couldn’t be downloaded. Try again.",
+  slow:"Saved plans can’t be reached yet, so this may be out of date.",local:"Records are saved in this device’s browser only.",
+  backupT:"Backup:",backupDown:"Download backup",backupUp:"Restore backup",tRestored:"Backup restored.",eRestore:"That file isn’t a valid backup.",
+  pdfTitle:"3B Seating Plan",pdfNote:"Row 1 is nearest the blackboard",rowWord:"Row",year:YEAR,
+ }};
+const T=()=>I18N[S.s.lang==="en"?"en":"zh"];
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const PRESETS=[{id:"pairs",cols:6,group:2},{id:"single",cols:6,group:1},{id:"wide",cols:7,group:1},{id:"threes",cols:6,group:3}];
+function applyPreset(s){const p=PRESETS.find(x=>x.id===s.preset)||PRESETS[0];s.preset=p.id;s.cols=p.cols;s.group=p.group;s.rows=Math.ceil(STUDENTS.length/p.cols);s.blocked=[]}
+const unusedSeats=s=>usableSeats(s).slice(STUDENTS.length).map(x=>key(x.r,x.c));
+const defaults=()=>({preset:"pairs",rows:6,cols:6,group:2,blocked:[],front:[],back:[],apart:[],together:[],focus:"balanced",mixHouses:true,boardTop:true,lang:"zh"});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const label=no=>no+" "+BY_NO[no].zh;
+const key=(r,c)=>r+"-"+c;
+const pairKey=(a,b)=>a<b?a+"|"+b:b+"|"+a;
+const niceDate=d=>{if(!d)return"";const[y,m,dd]=d.split("-");return dd+"/"+m+"/"+y};
+const sortPlans=l=>[...l].sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(a.savedAt||0)-(b.savedAt||0));
+
+/* ---------- geometry ---------- */
+function usableSeats(s){const list=[];const off=new Set(s.blocked||[]);for(let r=0;r<s.rows;r++)for(let c=0;c<s.cols;c++)if(!off.has(key(r,c)))list.push({r,c});return list}
+function seatsInUse(s,n){return usableSeats(s).slice(0,n)}
+const sameDesk=(a,b,g)=>a.r===b.r&&Math.abs(a.c-b.c)===1&&(g===1||Math.floor(a.c/g)===Math.floor(b.c/g));
+function closeness(a,b,g){
+  if(sameDesk(a,b,g))return 1;
+  if(a.r===b.r&&Math.abs(a.c-b.c)===1)return .35;
+  if(a.c===b.c&&Math.abs(a.r-b.r)===1)return .4;
+  return 0;
+}
+const touching=(a,b)=>Math.abs(a.r-b.r)<=1&&Math.abs(a.c-b.c)<=1;
+const rowPos=(r,rows)=>rows>1?r/(rows-1):0;
+function planEntries(p){return Object.entries(p.seats||{}).map(([k,no])=>{const[r,c]=k.split("-").map(Number);return{r,c,no}})}
+
+/* ---------- memory of earlier plans ---------- */
+function buildHistory(plans){
+  const pair={},lean={},w={},last={};
+  [...plans].reverse().forEach((p,age)=>{
+    const e=planEntries(p),keep=.75**age,rw=.6**age;
+    e.forEach(a=>{
+      lean[a.no]=(lean[a.no]||0)+rowPos(a.r,p.rows)*rw;w[a.no]=(w[a.no]||0)+rw;
+      if(age===0)last[a.no]={r:a.r,c:a.c};
+      e.forEach(b=>{if(a.no<b.no){const s=closeness(a,b,p.group);if(s)pair[pairKey(a.no,b.no)]=(pair[pairKey(a.no,b.no)]||0)+s*keep}});
+    });
+  });
+  const backness={};STUDENTS.forEach(s=>backness[s.no]=w[s.no]?lean[s.no]/w[s.no]:.5);
+  return{pair,backness,last,count:plans.length};
+}
+
+/* ---------- the plan maker ---------- */
+function makePlan(s,plans,avoid,effort){
+  const people=STUDENTS.map(x=>x.no),n=people.length,seats=seatsInUse(s,n);
+  if(seats.length<n)return null;
+  const h=buildHistory(plans),W={balanced:[34,12],neighbours:[12,26],rotation:[70,6]}[s.focus]||[34,12];
+  const span=s.rows<=3?1:2;
+  const fr=new Set(s.front),bk=new Set(s.back);
+  const order=[...people].sort((a,b)=>(h.backness[b]-h.backness[a])||(Math.random()-.5));
+  const target={};order.forEach((no,i)=>target[no]=n>1?i/(n-1):0);
+  const pos=seats.map(x=>rowPos(x.r,s.rows));
+  const links=seats.map(()=>[]);
+  for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const w=closeness(seats[i],seats[j],s.group);if(w){links[i].push([j,w]);links[j].push([i,w])}}
+  const unary=(no,i)=>{
+    let v=0;const x=seats[i],t=fr.has(no)||bk.has(no);
+    if(!t){const d=pos[i]-target[no];v+=W[0]*d*d*2}
+    if(fr.has(no)&&x.r>=span)v+=800*(1+x.r-span+1);
+    if(bk.has(no)&&x.r<s.rows-span)v+=800*(s.rows-span-x.r+1);
+    const l=h.last[no];
+    if(l){if(l.r===x.r&&l.c===x.c)v+=10;else if(l.c===x.c)v+=1.5}
+    if(avoid&&avoid[key(x.r,x.c)]===no)v+=3;
+    return v;
+  };
+  const link=(a,b,w)=>{
+    if(a<0||b<0)return 0;
+    let v=(h.pair[pairKey(a,b)]||0)*W[1]*w;
+    if(s.mixHouses&&BY_NO[a].house===BY_NO[b].house)v+=w>=1?1.6:.3;
+    return v;
+  };
+  const rules=(asg,where)=>{
+    let v=0;
+    (s.apart||[]).forEach(([a,b])=>{if(touching(seats[where[a]],seats[where[b]]))v+=900});
+    (s.together||[]).forEach(([a,b])=>{const c=closeness(seats[where[a]],seats[where[b]],s.group);if(c<1)v+=c?500:900});
+    return v;
+  };
+  const local=(asg,i,j)=>{
+    let v=unary(asg[i],i)+unary(asg[j],j);
+    links[i].forEach(([k,w])=>{v+=link(asg[i],asg[k],w)});
+    links[j].forEach(([k,w])=>{if(k!==i)v+=link(asg[j],asg[k],w)});
+    return v;
+  };
+  const total=(asg,where)=>{let v=rules(asg,where);asg.forEach((no,i)=>{v+=unary(no,i);links[i].forEach(([k,w])=>{if(k>i)v+=link(no,asg[k],w)})});return v};
+  const rounds=(effort&&effort.rounds)||7,steps=(effort&&effort.steps)||26000;
+  let best=null,bestCost=Infinity;
+  for(let round=0;round<rounds;round++){
+    const idx=seats.map((_,i)=>i).sort((a,b)=>pos[a]-pos[b]||Math.random()-.5);
+    const by=[...people].sort((a,b)=>target[a]-target[b]);
+    const asg=new Array(n),where={};idx.forEach((si,i)=>{asg[si]=by[i];where[by[i]]=si});
+    let cost=total(asg,where),rc=rules(asg,where),T=14;const cool=Math.pow(.02/14,1/steps);
+    for(let t=0;t<steps;t++,T*=cool){
+      const i=Math.floor(Math.random()*n);let j=Math.floor(Math.random()*n);if(i===j)continue;
+      const a=asg[i],b=asg[j],before=local(asg,i,j);
+      asg[i]=b;asg[j]=a;where[a]=j;where[b]=i;
+      const after=local(asg,i,j),nr=rules(asg,where),d=after-before+nr-rc;
+      if(d<=0||Math.random()<Math.exp(-d/T)){cost+=d;rc=nr}
+      else{asg[i]=a;asg[j]=b;where[a]=i;where[b]=j}
+    }
+    cost=total(asg,where);
+    if(cost<bestCost){bestCost=cost;best=asg.slice()}
+  }
+  const out={};best.forEach((no,i)=>out[key(seats[i].r,seats[i].c)]=no);
+  return out;
+}
+
+/* ---------- how a plan measures up ---------- */
+function review(plan,earlier,s){
+  const entries=planEntries(plan),at={};entries.forEach(e=>at[e.no]=e);
+  const r={first:!earlier.length,problems:[]};
+  const span=plan.rows<=3?1:2;
+  (s.front||[]).forEach(no=>{if(at[no]&&at[no].r>=span)r.problems.push(T().pFront(label(no),span))});
+  (s.back||[]).forEach(no=>{if(at[no]&&at[no].r<plan.rows-span)r.problems.push(T().pBack(label(no),span))});
+  (s.apart||[]).forEach(([a,b])=>{if(at[a]&&at[b]&&touching(at[a],at[b]))r.problems.push(T().pApart(label(a),label(b)))});
+  (s.together||[]).forEach(([a,b])=>{if(at[a]&&at[b]&&closeness(at[a],at[b],plan.group)<1)r.problems.push(T().pTogether(label(a),label(b)))});
+  const seen={};earlier.forEach(p=>{const e=planEntries(p);e.forEach(a=>e.forEach(b=>{if(a.no<b.no&&closeness(a,b,p.group)>=1)seen[pairKey(a.no,b.no)]=1}))});
+  const mates={};entries.forEach(a=>entries.forEach(b=>{if(a.no!==b.no&&closeness(a,b,plan.group)>=1)(mates[a.no]=mates[a.no]||[]).push(b.no)}));
+  const withMate=Object.keys(mates);
+  r.newMate=withMate.filter(no=>mates[no].every(m=>!seen[pairKey(+no,m)])).length;r.mates=withMate.length;
+  const asked=new Set((s.together||[]).map(p=>pairKey(p[0],p[1])));
+  r.repeats=[];entries.forEach(a=>entries.forEach(b=>{if(a.no<b.no&&closeness(a,b,plan.group)>=1&&seen[pairKey(a.no,b.no)]&&!asked.has(pairKey(a.no,b.no)))r.repeats.push([a.no,b.no])}));
+  if(earlier.length){
+    const p=earlier[earlier.length-1],bef={};planEntries(p).forEach(e=>bef[e.no]=e);
+    const fromBack=entries.filter(e=>bef[e.no]&&rowPos(bef[e.no].r,p.rows)>=.5);
+    r.backTotal=fromBack.length;r.moved=fromBack.filter(e=>rowPos(e.r,plan.rows)<rowPos(bef[e.no].r,p.rows)).length;
+    r.before=bef;
+  }
+  return r;
+}
+
+
+/* ---------- PDF ---------- */
+const FONT='"Noto Sans TC","PingFang TC","Microsoft JhengHei","Noto Sans CJK TC",sans-serif';
+function fitLines(ctx,text,maxW,maxLines,size,min){
+  for(let z=size;z>=min;z--){
+    ctx.font="400 "+z+"px "+FONT;const words=text.split(" "),lines=[];let cur="";
+    words.forEach(w=>{const t=cur?cur+" "+w:w;if(ctx.measureText(t).width<=maxW||!cur)cur=t;else{lines.push(cur);cur=w}});lines.push(cur);
+    if(lines.length<=maxLines&&lines.every(l=>ctx.measureText(l).width<=maxW))return{z,lines};
+  }
+  return{z:min,lines:[text]};
+}
+function rr(x,a,b,w,h,r){x.beginPath();x.roundRect?x.roundRect(a,b,w,h,r):x.rect(a,b,w,h)}
+function drawSheet(p,boardTop){
+  const t=T(),W=2480,H=1754,m=120,cv=document.createElement("canvas");cv.width=W;cv.height=H;
+  const x=cv.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  x.fillStyle="#2F3C48";x.font="700 64px "+FONT;x.textAlign="left";x.fillText(t.pdfTitle,m,m+50);
+  x.font="400 38px "+FONT;x.fillStyle="#5F6E7B";x.textAlign="right";x.fillText((p.name||"")+(p.date?"   "+niceDate(p.date):""),W-m,m+50);
+  const top=m+96,bottom=H-m-54,boardH=78,g=p.group||1,barY=boardTop?top:bottom-boardH;
+  x.fillStyle="#D9EBE1";rr(x,m,barY,W-2*m,boardH,16);x.fill();
+  x.fillStyle="#2C5A45";x.font="700 38px "+FONT;x.textAlign="center";x.fillText(t.board,W/2,barY+52);
+  const gy=boardTop?top+boardH+30:top,gh=(boardTop?bottom:bottom-boardH-30)-gy;
+  const aisles=g>1?Math.ceil(p.cols/g)-1:0,aisle=g>1?48:0,gapC=g>1?5:14,gapR=22,gutter=52;
+  const cw=(W-2*m-gutter-aisles*aisle-(p.cols-1)*gapC)/p.cols,ch=(gh-(p.rows-1)*gapR)/p.rows;
+  const off=new Set(p.blocked||[]);
+  for(let r=0;r<p.rows;r++){
+    const dr=boardTop?r:p.rows-1-r,yy=gy+dr*(ch+gapR);
+    x.fillStyle="#5F6E7B";x.font="400 32px "+FONT;x.textAlign="left";x.fillText(String(r+1),m+4,yy+ch/2+11);
+    for(let c=0;c<p.cols;c++){
+      const dc=boardTop?c:p.cols-1-c,xx=m+gutter+dc*(cw+gapC)+(g>1?Math.floor(dc/g)*aisle:0),k=key(r,c);
+      if(off.has(k))continue;
+      const no=p.seats[k];
+      if(!no){x.strokeStyle="#DFE6EC";x.setLineDash([12,10]);x.lineWidth=2;rr(x,xx+2,yy+2,cw-4,ch-4,14);x.stroke();x.setLineDash([]);continue}
+      const st=BY_NO[no],pad=Math.min(cw*.09,24),zs=Math.min(ch*.3,cw*.2,68);
+      x.fillStyle=HOUSE_HEX[st.house];rr(x,xx,yy,cw,ch,14);x.fill();
+      x.textAlign="left";x.fillStyle="#5F6E7B";x.font="500 "+Math.round(zs*.5)+"px "+FONT;x.fillText(String(no),xx+pad,yy+zs*.72);
+      x.fillStyle="#2F3C48";x.font="700 "+Math.round(zs)+"px "+FONT;x.fillText(st.zh,xx+pad,yy+zs*1.86);
+      const f=fitLines(x,st.en,cw-2*pad,2,Math.round(Math.min(zs*.46,30)),15);
+      x.fillStyle="#4C5966";x.font="400 "+f.z+"px "+FONT;f.lines.forEach((l,i)=>x.fillText(l,xx+pad,yy+zs*1.9+(i+1)*f.z*1.2));
+    }
+  }
+  let lx=m;x.font="400 30px "+FONT;x.textAlign="left";
+  ["R","Y","V","G"].forEach(h=>{x.fillStyle=HOUSE_HEX[h];rr(x,lx,H-m-22,28,28,6);x.fill();x.fillStyle="#5F6E7B";x.fillText(h+"社",lx+38,H-m+1);lx+=140});
+  x.textAlign="right";x.fillText(t.pdfNote,W-m,H-m+1);
+  return cv;
+}
+function buildPdf(jpegBytes,imgW,imgH){
+  const PW=841.89,PH=595.28,enc=new TextEncoder(),parts=[],offs=[];let size=0;
+  const push=b=>{const u=typeof b==="string"?enc.encode(b):b;parts.push(u);size+=u.length};
+  const obj=(n,body)=>{offs[n]=size;push(n+" 0 obj\n");body();push("\nendobj\n")};
+  push("%PDF-1.4\n");
+  obj(1,()=>push("<< /Type /Catalog /Pages 2 0 R >>"));
+  obj(2,()=>push("<< /Type /Pages /Kids [3 0 R] /Count 1 >>"));
+  obj(3,()=>push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 "+PW+" "+PH+"] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>"));
+  obj(4,()=>{push("<< /Type /XObject /Subtype /Image /Width "+imgW+" /Height "+imgH+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+jpegBytes.length+" >>\nstream\n");push(jpegBytes);push("\nendstream")});
+  const content="q "+PW+" 0 0 "+PH+" 0 0 cm /Im0 Do Q";
+  obj(5,()=>push("<< /Length "+content.length+" >>\nstream\n"+content+"\nendstream"));
+  const xref=size;
+  push("xref\n0 6\n0000000000 65535 f \n");
+  for(let i=1;i<=5;i++)push(String(offs[i]).padStart(10,"0")+" 00000 n \n");
+  push("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n"+xref+"\n%%EOF\n");
+  const out=new Uint8Array(size);let o=0;parts.forEach(p=>{out.set(p,o);o+=p.length});
+  return out;
+}
+
+async function planPdf(p,boardTop){
+  try{await Promise.all([document.fonts.load('700 40px "Noto Sans TC"',"鄭鱈珊座位表"),document.fonts.load('400 40px "Noto Sans TC"',"AB座位")])}catch(e){}
+  const cv=drawSheet(p,boardTop),url=cv.toDataURL("image/jpeg",.94),bin=atob(url.split(",")[1]),b=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);
+  return{bytes:buildPdf(b,cv.width,cv.height),url};
+}
+
+/* ---------- storage ---------- */
+const store={db:null,mode:"loading",downloads:null,viewer:false};
+function localRead(){try{return JSON.parse(localStorage.getItem(LOCAL_KEY))||{}}catch(e){return{}}}
+function localWrite(){try{localStorage.setItem(LOCAL_KEY,JSON.stringify({plans:S.plans,settings:S.s}));return true}catch(e){return false}}
+async function saveSettings(){if(store.db){try{await store.db.doc("settings/main").set({...S.s})}catch(e){}}else localWrite()}
+async function savePlan(p){
+  if(store.db)await store.db.collection("plans").doc(p.id).set(p);
+  else{S.plans=S.plans.filter(x=>x.id!==p.id).concat(p);if(!localWrite())throw{code:"local"}}
+}
+async function removePlan(id){
+  if(store.db)await store.db.collection("plans").doc(id).delete();
+  else{S.plans=S.plans.filter(x=>x.id!==id);localWrite()}
+}
+function failNote(e){const t=T();toast(e&&e.code==="invalid_argument"?t.ePerm:e&&e.code==="quota_exceeded"?t.eFull:t.eSave)}
+function loadLocal(){const l=localRead();S.plans=l.plans||[];if(l.settings&&!S.touched)S.s={...defaults(),...l.settings};store.mode="local";S.loading=false;render()}
+async function connect(){
+  if(!(window.claude&&window.claude.use)){loadLocal();return}
+  store.viewer=true;
+  window.claude.use("downloads").then(d=>{store.downloads=d}).catch(()=>{});
+  let db=null;try{db=await window.claude.use("db")}catch(e){}
+  if(!db){loadLocal();return}
+  store.db=db;store.mode="cloud";
+  let gotPlans=false,gotSettings=false;
+  const timer=setTimeout(()=>{if(S.loading){S.loading=false;S.slow=true;render()}},10000);
+  const done=()=>{if(gotPlans&&gotSettings&&S.loading){clearTimeout(timer);S.loading=false;S.slow=false}render()};
+  db.collection("plans").limit(500).onSnapshot(q=>{S.plans=q.docs.map(d=>({...d.data(),id:d.id}));if(!q.metadata.fromCache){gotPlans=true;S.slow=false}done()},e=>{clearTimeout(timer);S.loading=false;S.slow=true;render()});
+  db.doc("settings/main").onSnapshot(d=>{if(d.exists&&!S.touched)S.s={...defaults(),...d.data()};if(!d.metadata.fromCache)gotSettings=true;done()},e=>{gotSettings=true;done()});
+}
+function saveFile(name,blob){const a=document.createElement("a"),u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}
+
+/* ---------- state + view ---------- */
+const S={view:"ask",step:1,s:defaults(),plans:[],loading:true,slow:false,touched:false,draft:null,dirty:false,sel:null,flash:false,rA:"",rT:"front",rB:"",date:today(),confirmDel:null,busy:false};
+let toastTimer;
+function toast(t){let el=document.querySelector(".tone");if(!el){el=document.createElement("div");el.className="tone";el.setAttribute("role","status");document.body.append(el)}el.textContent=t;clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.remove(),3800)}
+const sorted=()=>sortPlans(S.plans);
+function earlierThan(p){const l=sorted();if(!p.id)return l;const i=l.findIndex(x=>x.id===p.id);return i<0?l:l.slice(0,i)}
+function viewStep1(){
+  const t=T(),n=STUDENTS.length,chosen=S.s.preset||"pairs";
+  const thumb=p=>{const rows=Math.ceil(n/p.cols),gap=c=>p.group>1&&(c+1)%p.group===0&&c<p.cols-1,tracks=[];let cells="",left=n;
+    for(let c=0;c<p.cols;c++){tracks.push("9px");if(gap(c))tracks.push("5px")}
+    for(let r=0;r<rows;r++)for(let c=0;c<p.cols;c++){cells+=left-->0?"<i></i>":'<i class="none"></i>';if(gap(c))cells+="<span></span>"}
+    return`<span class="thumb" aria-hidden="true" style="grid-template-columns:${tracks.join(" ")}">${cells}</span>`};
+  return`<h2>${t.q1}</h2><p class="lede">${t.q1d(n)}</p><div class="field presets">${PRESETS.map(p=>`<button class="preset" data-act="preset" data-v="${p.id}" aria-pressed="${chosen===p.id}">${thumb(p)}<span><b>${t.presets[p.id][0]}</b><small>${t.presets[p.id][1]}</small></span></button>`).join("")}</div>`;
+}
+function viewStep2(){
+  const t=T(),s=S.s,opt=v=>`<option value="">${t.chooseS}</option>`+STUDENTS.map(x=>`<option value="${x.no}" ${String(v)===String(x.no)?"selected":""}>${x.no} ${x.zh}</option>`).join("");
+  const needB=S.rT==="apart"||S.rT==="together",types=[["front",t.rFront],["back",t.rBack],["apart",t.rApart],["together",t.rTogether]];
+  const row=(txt,f,i)=>`<li><span>${esc(txt)}</span><button class="btn text small" data-act="delreq" data-f="${f}" data-i="${i}">${t.remove}</button></li>`;
+  const items=[...s.front.map((n,i)=>row(t.lFront(label(n)),"front",i)),...s.back.map((n,i)=>row(t.lBack(label(n)),"back",i)),...s.apart.map((p,i)=>row(t.lApart(label(p[0]),label(p[1])),"apart",i)),...s.together.map((p,i)=>row(t.lTogether(label(p[0]),label(p[1])),"together",i))];
+  return`<h2>${t.q2}</h2><p class="lede">${t.q2d}</p><div class="field"><div class="reqform"><select data-input="rA" aria-label="${t.student||t.chooseS}">${opt(S.rA)}</select><select data-input="rT" aria-label="${t.q2}">${types.map(([v,l])=>`<option value="${v}" ${S.rT===v?"selected":""}>${l}</option>`).join("")}</select>${needB?`<select data-input="rB" aria-label="${t.chooseS}">${opt(S.rB)}</select>`:""}<button class="btn" data-act="addreq">${t.add}</button></div>${items.length?`<ul class="reqs">${items.join("")}</ul>`:""}</div>`;
+}
+function viewStep3(){
+  const t=T(),s=S.s,c=S.plans.length,ch=(v,a,b)=>`<label class="choice"><input type="radio" name="focus" data-act="focus" value="${v}" ${s.focus===v?"checked":""}><span>${a}<small>${b}</small></span></label>`;
+  return`<h2>${t.q3}</h2><p class="lede">${c?t.q3hist(c):t.q3first}</p><div class="field">${ch("balanced",t.fBal,t.fBalD)}${ch("neighbours",t.fNei,t.fNeiD)}${ch("rotation",t.fRot,t.fRotD)}</div>
+  <div class="field"><label style="display:flex;gap:9px;align-items:center;cursor:pointer"><input type="checkbox" data-act="mix" ${s.mixHouses?"checked":""} style="width:17px;height:17px;accent-color:var(--accent)">${t.mix}</label></div>
+  <div class="field"><label class="lab" for="pd">${t.date}</label><input id="pd" type="date" data-input="date" value="${esc(S.date)}"></div>`;
+}
+function viewAsk(){
+  const t=T(),ok=true,body=[0,viewStep1,viewStep2,viewStep3][S.step]();
+  return`<section class="ask"><p class="count">${t.stepOf(S.step,3)}</p>${body}<div class="foot">${S.step>1?`<button class="btn" data-act="stepby" data-d="-1">${t.back}</button>`:""}${S.step<3?`<button class="btn text" data-act="generate" ${(!ok||S.loading)?"disabled":""}>${t.skip}</button>`:""}<div class="right">${S.step<3?`<button class="btn main" data-act="stepby" data-d="1" ${ok?"":"disabled"}>${t.next}</button>`:`<button class="btn main" data-act="generate" ${(!ok||S.loading)?"disabled":""}>${S.loading?t.loading:t.gen}</button>`}</div></div></section>`;
+}
+function seatHtml(p,r,c,i){
+  const k=key(r,c),no=p.seats[k],t=T();
+  if((p.blocked||[]).includes(k))return`<span class="seat gone"></span>`;
+  const sel=S.sel===k?" sel":"",fl=S.flash?" flash":"";
+  if(!no)return`<button class="seat empty${sel}" data-act="seat" data-k="${k}">${t.empty}</button>`;
+  const st=BY_NO[no];
+  return`<button class="seat${sel}${fl}" style="--hc:var(--${st.house});--i:${i}" data-act="seat" data-k="${k}" aria-pressed="${S.sel===k}" aria-label="${no} ${esc(st.zh)} ${esc(st.en)}"><span class="zh"><span class="no">${no}</span>${esc(st.zh)}</span><span class="en">${esc(st.en)}</span></button>`;
+}
+function viewRoom(p){
+  const top=S.s.boardTop!==false,g=p.group||1,rs=[...Array(p.rows).keys()],cs=[...Array(p.cols).keys()],t=T();
+  if(!top){rs.reverse();cs.reverse()}
+  const benches=[];let cur=[];cs.forEach(c=>{if(cur.length&&Math.floor(cur[0]/g)!==Math.floor(c/g)){benches.push(cur);cur=[]}cur.push(c)});benches.push(cur);
+  let i=0;
+  const rows=rs.map(r=>`<div class="rowline"><span class="rowlabel">${r+1}</span>${(g>1?benches:cs.map(c=>[c])).map(b=>`<div class="bench">${b.map(c=>seatHtml(p,r,c,i++)).join("")}</div>`).join("")}</div>`).join("");
+  const board=`<div class="board">${t.board}</div>`;
+  return`<div class="room"><div class="roomin">${top?board:""}${rows}${top?"":`<div style="height:10px"></div>${board}`}</div></div>`;
+}
+function viewPlan(){
+  const t=T(),p=S.draft,rev=review(p,earlierThan(p),S.s),saved=!!p.id;
+  const sum=rev.first?t.firstSum:t.sum(rev.moved,rev.backTotal,rev.newMate,rev.mates);
+  return`<div class="planhead"><div><h2>${esc(p.name)}</h2><p>${niceDate(p.date)}${S.s.lang==="en"?", ":"，"}${saved?(S.dirty?t.changed:t.saved):t.unsaved}</p></div>
+  <div class="acts">${(!saved||S.dirty)?`<button class="btn main" data-act="save">${t.save}</button>`:""}<button class="btn" data-act="pdf" ${S.busy?"disabled":""}>${S.busy?t.making:t.pdf}</button></div></div>
+  ${viewRoom(p)}
+  <div class="under"><span>${S.sel?t.swapNow:t.swapHint}</span><span class="keys">${["R","Y","V","G"].map(h=>`<span><i style="background:var(--${h})"></i>${h}社</span>`).join("")}</span></div>
+  <p class="summary">${sum}${rev.repeats.length?` ${t.repeats(rev.repeats.slice(0,3).map(([a,b])=>a+"–"+b).join("、"))}`:""}</p>
+  ${rev.problems.map(x=>`<p class="prob">${esc(x)}</p>`).join("")}
+  <div class="links">${saved?"":`<button class="btn text" data-act="generate">${t.another}</button><button class="btn text" data-act="toask">${t.change}</button>`}<button class="btn text" data-act="flip">${t.flip}</button></div>`;
+}
+function viewRecord(){
+  const t=T(),l=sorted(),rev=[...l].reverse();
+  const head=`<div class="head2"><h2>${t.savedTitle}</h2><button class="btn" data-act="record">${t.recordCurrent}</button></div>`;
+  const list=l.length?`<ul class="savedlist">${rev.map(p=>`<li><div class="grow">${esc(p.name)}<span>${niceDate(p.date)}</span></div><div class="btns"><button class="btn small" data-act="open" data-id="${esc(p.id)}">${t.open}</button>${S.confirmDel===p.id?`<button class="btn small danger" data-act="del" data-id="${esc(p.id)}">${t.delYes}</button><button class="btn small text" data-act="nodel">${t.delNo}</button>`:`<button class="btn small text" data-act="askdel" data-id="${esc(p.id)}">${t.del}</button>`}</div></li>`).join("")}</ul>`:`<div class="blank"><p>${t.noPlans}</p><button class="btn main" data-act="goask">${t.newPlan}</button></div>`;
+  let table="";
+  if(l.length){
+    const rows=STUDENTS.map(st=>{const mates=new Set(),cells=l.map(p=>{const e=planEntries(p),me=e.find(x=>x.no===st.no);if(!me)return`<td class="r">–</td>`;e.forEach(o=>{if(o.no!==st.no&&closeness(me,o,p.group)>=1)mates.add(o.no)});return`<td class="r">${me.r+1}</td>`}).join("");
+      return`<tr><td>${st.no} ${st.zh}</td>${cells}<td class="mates">${[...mates].sort((a,b)=>a-b).map(label).join("、")||t.none}</td></tr>`}).join("");
+    table=`<h3>${t.studentRec}</h3><p class="note" style="margin:-6px 0 10px">${t.studentNote}</p><div class="tablewrap"><table><thead><tr><th>${t.student}</th>${l.map(p=>`<th class="pl">${esc(p.name)}<br>${niceDate(p.date)}</th>`).join("")}<th>${t.mates}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  const backup=store.mode==="local"?`<div class="backup"><span>${t.backupT}</span><button class="btn text small" data-act="backup">${t.backupDown}</button><label class="btn text small" style="display:inline-flex;align-items:center;cursor:pointer">${t.backupUp}<input type="file" accept="application/json,.json" data-input="restore" hidden></label></div>`:"";
+  const clear=l.length?`<div class="backup">${S.confirmClear?`<span>${t.clearNote}</span><button class="btn small danger" data-act="clearall">${t.clearYes(l.length)}</button><button class="btn small text" data-act="noclear">${t.delNo}</button>`:`<button class="btn small text" data-act="askclear" style="color:var(--soft)">${t.clearAll}</button>`}</div>`:"";
+  return head+list+table+backup+clear;
+}
+function render(){
+  const t=T();document.documentElement.lang=S.s.lang==="en"?"en":"zh-Hant";document.title=t.title;
+  const cur=S.view==="record"||(S.view==="plan"&&S.draft&&S.draft.id)?"record":"plan";
+  const body=S.view==="ask"?viewAsk():S.view==="plan"?viewPlan():viewRecord();
+  const notice=S.slow?`<p class="sync">${t.slow}</p>`:"";
+  document.getElementById("root").innerHTML=`<header><div class="top"><h1>${t.title}</h1><nav aria-label="Main"><button data-act="nav" data-v="plan" ${cur==="plan"?'aria-current="page"':""}>${t.tabPlan}</button><button data-act="nav" data-v="record" ${cur==="record"?'aria-current="page"':""}>${t.tabRecord}</button></nav><button class="lang" data-act="restart">${S.confirmRestart?t.restartYes:t.restart}</button><button class="lang" data-act="lang">${t.other}</button></div></header><main>${notice}${body}</main>`;
+  S.flash=false;
+}
+
+/* ---------- actions ---------- */
+function touch(){S.touched=true}
+function generate(){
+  if(S.loading)return;
+  applyPreset(S.s);
+  const prior=S.draft&&!S.draft.id?S.draft.seats:null,s=S.s,seats=makePlan(s,sorted(),prior);
+  if(!seats)return;
+  S.draft={id:null,name:T().planN(S.plans.length+1),date:S.date||today(),rows:s.rows,cols:s.cols,group:s.group,blocked:unusedSeats(s),seats};
+  S.dirty=false;S.sel=null;S.flash=true;S.view="plan";render();window.scrollTo(0,0);touch();saveSettings();
+}
+const actions={
+  nav(d){S.sel=null;S.confirmDel=null;if(d.v==="plan"){if(S.draft&&!S.draft.id)S.view="plan";else{S.view="ask";S.step=1}}else S.view="record";render()},
+  lang(){touch();S.s.lang=S.s.lang==="en"?"zh":"en";render();saveSettings()},
+  stepby(d){S.step=Math.min(3,Math.max(1,S.step+ +d.d));render();window.scrollTo(0,0)},
+  preset(d){touch();S.s.preset=d.v;applyPreset(S.s);render()},
+  addreq(){
+    const t=T(),a=+S.rA,b=+S.rB,type=S.rT,s=S.s;
+    if(!a){toast(t.needOne);return}
+    if(type==="front"||type==="back"){
+      if(s[type].includes(a)){toast(t.dup);return}
+      touch();const o=type==="front"?"back":"front";s[o]=s[o].filter(x=>x!==a);s[type].push(a);
+    }else{
+      if(!b||a===b){toast(t.needTwo);return}
+      if(s.apart.concat(s.together).some(p=>pairKey(p[0],p[1])===pairKey(a,b))){toast(t.dup);return}
+      touch();s[type].push([a,b]);
+    }
+    S.rA=S.rB="";render();
+  },
+  delreq(d){touch();S.s[d.f].splice(+d.i,1);render()},
+  generate(){generate()},
+  restart(){
+    const t=T();
+    if(S.draft&&(!S.draft.id||S.dirty)&&!S.confirmRestart){S.confirmRestart=true;render();toast(t.restartWarn);return}
+    const{lang,boardTop}=S.s;
+    S.s={...defaults(),lang,boardTop};S.draft=null;S.dirty=false;S.sel=null;S.step=1;S.view="ask";S.date=today();S.rA=S.rB="";S.rT="front";S.confirmRestart=false;S.confirmClear=false;S.confirmDel=null;
+    touch();render();window.scrollTo(0,0);saveSettings();toast(t.tRestart);
+  },
+  askclear(){S.confirmClear=true;render()},
+  noclear(){S.confirmClear=false;render()},
+  async clearall(){
+    try{for(const p of [...S.plans])await removePlan(p.id);S.confirmClear=false;S.draft=null;S.dirty=false;render();toast(T().tCleared)}catch(e){failNote(e)}
+  },
+  goask(){S.view="ask";S.step=1;S.draft=null;render()},
+  toask(){S.view="ask";S.step=1;render()},
+  seat(d){
+    if(!S.sel){S.sel=d.k;render();return}
+    if(S.sel===d.k){S.sel=null;render();return}
+    const p=S.draft,a=p.seats[S.sel],b=p.seats[d.k];
+    if(b)p.seats[S.sel]=b;else delete p.seats[S.sel];
+    if(a)p.seats[d.k]=a;else delete p.seats[d.k];
+    S.sel=null;S.dirty=true;render();
+  },
+  flip(){touch();S.s.boardTop=S.s.boardTop===false;render();saveSettings()},
+  async save(){
+    const p=S.draft,isNew=!p.id,t=T(),rec={...p,id:p.id||"p"+Date.now(),savedAt:p.savedAt||Date.now()};
+    try{await savePlan(rec);S.draft=rec;S.dirty=false;render();toast(isNew?t.tSaved:t.tChanged)}catch(e){failNote(e)}
+  },
+  async pdf(){
+    const t=T(),name=CLASS_NAME+" "+S.draft.name.replace(/[\\/:*?"<>|]/g,"-")+".pdf";
+    S.busy=true;render();
+    try{
+      const{bytes,url}=await planPdf(S.draft,S.s.boardTop!==false),blob=new Blob([bytes],{type:"application/pdf"});
+      if(store.downloads){await store.downloads.save({filename:name,data:blob});toast(t.tPdf)}
+      else if(store.viewer){await printImage(url)}
+      else{saveFile(name,blob);toast(t.tPdf)}
+    }catch(e){if(!(e&&e.code==="declined"))toast(t.ePdf)}
+    S.busy=false;render();
+  },
+  record(){
+    applyPreset(S.s);
+    const s=S.s,seats={};seatsInUse(s,STUDENTS.length).forEach((x,i)=>seats[key(x.r,x.c)]=STUDENTS[i].no);
+    S.draft={id:null,name:T().current,date:today(),rows:s.rows,cols:s.cols,group:s.group,blocked:unusedSeats(s),seats};
+    S.dirty=true;S.sel=null;S.view="plan";render();toast(T().recHint);
+  },
+  open(d){const p=S.plans.find(x=>x.id===d.id);if(!p)return;S.draft=JSON.parse(JSON.stringify(p));S.dirty=false;S.sel=null;S.view="plan";render();window.scrollTo(0,0)},
+  askdel(d){S.confirmDel=d.id;render()},
+  nodel(){S.confirmDel=null;render()},
+  async del(d){try{await removePlan(d.id);S.confirmDel=null;if(S.draft&&S.draft.id===d.id)S.draft=null;render();toast(T().tDeleted)}catch(e){failNote(e)}},
+  backup(){saveFile("3B-seating-backup-"+today()+".json",new Blob([JSON.stringify({app:"seating-3b",plans:S.plans,settings:S.s})],{type:"application/json"}))},
+};
+async function printImage(url){
+  const box=document.getElementById("printSheet");box.innerHTML=`<img alt="" src="${url}">`;
+  const img=box.firstChild;if(!img.complete)await new Promise(r=>{img.onload=r;img.onerror=r});
+  window.print();
+}
+document.addEventListener("click",e=>{const t=e.target.closest("[data-act]");if(!t||t.matches("input"))return;if(t.dataset.act!=="restart")S.confirmRestart=false;const f=actions[t.dataset.act];if(f)f(t.dataset)});
+document.addEventListener("change",async e=>{
+  const t=e.target,a=t.dataset.act,i=t.dataset.input;
+  if(a==="focus"){touch();S.s.focus=t.value}
+  else if(a==="mix"){touch();S.s.mixHouses=t.checked}
+  else if(i==="rA"||i==="rB")S[i]=t.value;
+  else if(i==="rT"){S.rT=t.value;render()}
+  else if(i==="date")S.date=t.value;
+  else if(i==="restore"&&t.files[0]){
+    try{const d=JSON.parse(await t.files[0].text());if(d.app!=="seating-3b"||!Array.isArray(d.plans))throw 0;S.plans=d.plans;S.s={...defaults(),...d.settings};touch();localWrite();render();toast(T().tRestored)}catch(x){toast(T().eRestore)}
+  }
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.sel){S.sel=null;render()}});
+render();connect();
+</script>
+</body>
+</html>
